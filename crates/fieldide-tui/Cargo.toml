@@ -1,0 +1,17 @@
+[package]
+name = "fieldide-tui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+clap.workspace = true
+crossterm.workspace = true
+fieldide-core = { path = "../fieldide-core" }
+fieldide-editor = { path = "../fieldide-editor" }
+ratatui.workspace = true
+
+[lints]
+workspace = true
+

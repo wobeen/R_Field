@@ -1,0 +1,28 @@
+[workspace]
+members = [
+    "crates/fieldide-core",
+    "crates/fieldide-editor",
+    "crates/fieldide-adapters",
+    "crates/fieldide-tui",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.85"
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+all = "warn"
+
+[workspace.dependencies]
+clap = { version = "4.5", features = ["derive"] }
+crossterm = "0.28"
+ratatui = "0.29"
+ropey = "1.6"
+tempfile = "3.13"
+unicode-segmentation = "1.12"

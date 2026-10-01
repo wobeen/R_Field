@@ -1,0 +1,13 @@
+[package]
+name = "fieldide-adapters"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+fieldide-core = { path = "../fieldide-core" }
+
+[lints]
+workspace = true
+
