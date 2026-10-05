@@ -1,0 +1,3 @@
+Type: rcl_interfaces/msg/ParameterEvent
+Publisher count: 3
+Subscription count: 3

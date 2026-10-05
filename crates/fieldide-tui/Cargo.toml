@@ -8,10 +8,13 @@ rust-version.workspace = true
 [dependencies]
 clap.workspace = true
 crossterm.workspace = true
+fieldide-adapters = { path = "../fieldide-adapters" }
 fieldide-core = { path = "../fieldide-core" }
 fieldide-editor = { path = "../fieldide-editor" }
 ratatui.workspace = true
+tokio.workspace = true
+unicode-segmentation.workspace = true
+unicode-width.workspace = true
 
 [lints]
 workspace = true
-

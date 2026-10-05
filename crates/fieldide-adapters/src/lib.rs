@@ -1,6 +1,4 @@
-//! Side-effect adapters. Process, ROS and build adapters arrive in weeks 3-5.
+//! Process and ROS CLI adapters. Domain state remains in `fieldide-core`.
 
-/// Marks the week-one adapter boundary without coupling core state to I/O.
-pub trait Adapter {
-    fn name(&self) -> &'static str;
-}
+pub mod process;
+pub mod ros;

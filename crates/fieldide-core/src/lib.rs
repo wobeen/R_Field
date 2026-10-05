@@ -18,12 +18,34 @@ pub enum Panel {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RosNode {
+    pub name: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RosTopic {
+    pub name: String,
+    pub types: Vec<String>,
+    pub publishers: u32,
+    pub subscribers: u32,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct RosSnapshot {
+    pub nodes: Vec<RosNode>,
+    pub topics: Vec<RosTopic>,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AppState {
     pub mode: SafetyMode,
     pub panel: Panel,
     pub active_file: Option<PathBuf>,
     pub dirty: bool,
     pub notice: Option<String>,
+    pub ros: RosSnapshot,
+    pub ros_refreshing: bool,
 }
 
 impl Default for AppState {
@@ -34,6 +56,8 @@ impl Default for AppState {
             active_file: None,
             dirty: false,
             notice: None,
+            ros: RosSnapshot::default(),
+            ros_refreshing: false,
         }
     }
 }
@@ -44,6 +68,7 @@ pub enum Command {
     Open(PathBuf),
     Edit,
     Save,
+    RefreshRos,
     ArmControl,
     ConfirmControl,
     ReturnToObserve,
@@ -53,12 +78,15 @@ pub enum Command {
 pub enum Effect {
     LoadFile(PathBuf),
     SaveFile(PathBuf),
+    RefreshRos,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AppEvent {
     FileLoaded(PathBuf),
     FileSaved,
+    RosRefreshStarted,
+    RosSnapshotLoaded(RosSnapshot),
     Failed(String),
 }
 
@@ -80,6 +108,14 @@ pub fn reduce_command(state: &mut AppState, command: Command) -> Vec<Effect> {
                 return vec![Effect::SaveFile(path.clone())];
             }
             state.notice = Some("저장할 파일이 없습니다".to_owned());
+        }
+        Command::RefreshRos => {
+            if state.ros_refreshing {
+                state.notice = Some("ROS graph를 이미 갱신하고 있습니다".to_owned());
+            } else {
+                state.ros_refreshing = true;
+                return vec![Effect::RefreshRos];
+            }
         }
         Command::ArmControl if state.mode == SafetyMode::Observe => {
             state.mode = SafetyMode::Armed;
@@ -108,7 +144,19 @@ pub fn reduce_event(state: &mut AppState, event: AppEvent) {
             state.dirty = false;
             state.notice = Some("저장했습니다".to_owned());
         }
-        AppEvent::Failed(message) => state.notice = Some(message),
+        AppEvent::RosRefreshStarted => {
+            state.ros_refreshing = true;
+            state.notice = Some("ROS graph를 갱신하고 있습니다".to_owned());
+        }
+        AppEvent::RosSnapshotLoaded(snapshot) => {
+            state.ros = snapshot;
+            state.ros_refreshing = false;
+            state.notice = Some("ROS graph를 갱신했습니다".to_owned());
+        }
+        AppEvent::Failed(message) => {
+            state.ros_refreshing = false;
+            state.notice = Some(message);
+        }
     }
 }
 
@@ -163,5 +211,27 @@ mod tests {
 
         reduce_event(&mut state, AppEvent::FileSaved);
         assert!(!state.dirty);
+    }
+
+    #[test]
+    fn ros_refresh_prevents_overlap_and_folds_snapshot() {
+        let mut state = AppState::default();
+        assert_eq!(
+            reduce_command(&mut state, Command::RefreshRos),
+            vec![Effect::RefreshRos]
+        );
+        assert!(state.ros_refreshing);
+        assert!(reduce_command(&mut state, Command::RefreshRos).is_empty());
+
+        let snapshot = RosSnapshot {
+            nodes: vec![RosNode {
+                name: "/motor".to_owned(),
+            }],
+            topics: Vec::new(),
+            warnings: Vec::new(),
+        };
+        reduce_event(&mut state, AppEvent::RosSnapshotLoaded(snapshot.clone()));
+        assert_eq!(state.ros, snapshot);
+        assert!(!state.ros_refreshing);
     }
 }
